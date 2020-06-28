@@ -77,7 +77,7 @@ namespace Simulation01.Terrain
                     var meshRenderer = go.AddComponent<MeshRenderer>();
                     meshRenderer.shadowCastingMode = ShadowCastingMode.Off;
                     meshRenderer.material = terrainMaterial;
-                    meshRenderer.material.mainTexture = GenerateTexture(baseX, baseZ);
+                    meshRenderer.material.SetTexture("_BaseMap", GenerateTexture(baseX, baseZ));
                 }
             }
 
