@@ -40,6 +40,7 @@ namespace Simulation01.Weather
         /// <summary>
         /// Creates new instance by specifying required params. 
         /// </summary>
+        /// <param name="noiseGenerator">NoiseGenerator instance</param>
         /// <param name="divisionsPerSide">number of blocks on which grid will be divided</param>
         /// <param name="biomePointRadius">test radius around each grid point</param>
         public WeatherGroupsCreator(NoiseGenerator noiseGenerator, int divisionsPerSide, float biomePointRadius = 0.06f)
@@ -70,7 +71,7 @@ namespace Simulation01.Weather
                     var yy = 1f - (float) i / m_DivisionsPerSide;
 
                     // Test that point in safe zone
-                    if (m_NoiseGenerator.GetHeightLevelAt(xx, yy).tile.Surface != SurfaceType.Sea &&
+                    if (m_NoiseGenerator.GetHeightLevelAt(xx, yy).Tile.Surface != SurfaceType.Sea &&
                         ClimateZoneGenerator.TestCirclePlacedInOneZone(new Vector2(xx, yy), m_BiomePointRadius,
                             out var zoneType))
                     {

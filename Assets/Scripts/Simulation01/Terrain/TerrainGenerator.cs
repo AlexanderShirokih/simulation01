@@ -1,5 +1,4 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.Rendering;
 
 namespace Simulation01.Terrain
@@ -37,25 +36,8 @@ namespace Simulation01.Terrain
         /// Texture resolution per single block
         public int textureResolution = 128;
 
-        /// Terrain colors: for water level
-        public Color water = Color.blue;
-
-        /// Terrain colors: for beach level
-        public Color beach = Color.yellow;
-
-        /// Terrain colors: for grass level
-        public Color grass = Color.green;
-
-        /// Terrain colors: for mountains level
-        public Color mountains = Color.gray;
-
-        /// Terrain colors: for mountains and arctic
-        public Color winter = Color.white;
-
-        /// Terrain colors: for moderate climate
-        public Color moderate = new Color(0.7f, 1f, 0.39f);
-
         public readonly NoiseGenerator NoiseGenerator = new NoiseGenerator(5f);
+        private static readonly int s_Map = Shader.PropertyToID("Map");
 
         private void Start()
         {
@@ -77,7 +59,7 @@ namespace Simulation01.Terrain
                     var meshRenderer = go.AddComponent<MeshRenderer>();
                     meshRenderer.shadowCastingMode = ShadowCastingMode.Off;
                     meshRenderer.material = terrainMaterial;
-                    meshRenderer.material.SetTexture("_BaseMap", GenerateTexture(baseX, baseZ));
+                    meshRenderer.material.SetTexture(s_Map, GenerateTexture(baseX, baseZ));
                 }
             }
 
@@ -90,7 +72,6 @@ namespace Simulation01.Terrain
             var globalStep = (float) vertexPerBlockSide * sideBlocksCount;
             var vertices = new Vector3[(vertexPerBlockSide + 1) * (vertexPerBlockSide + 1)];
             var uv = new Vector2[vertices.Length];
-
 
             // Generate vertices and texture coords
             for (int i = 0, z = 0; z <= vertexPerBlockSide; z++)
@@ -142,7 +123,7 @@ namespace Simulation01.Terrain
                 filterMode = FilterMode.Bilinear
             };
 
-            var pixels = texture.GetPixels();
+            var pixels = texture.GetPixels32();
 
             var fTexRes = (float) textureResolution;
             var delta = 1f / (fTexRes * sideBlocksCount);
@@ -153,49 +134,29 @@ namespace Simulation01.Terrain
                 var nX = baseX + x * delta;
                 var nZ = baseZ + z * delta;
                 var noiseValue = NoiseGenerator.GetNoiseValue(nX, nZ);
-                pixels[x + z * textureResolution] = NoiseGenerator.GetColorAt(nX, nZ, noiseValue, GetColor);
+                var zoneValue = ClimateZoneGenerator.GetZoneValue(nX, nZ);
+                pixels[x + z * textureResolution] =
+                    new Color32((byte) (255 * noiseValue), (byte) (255 * zoneValue), 0, 0);
             }
 
-            texture.SetPixels(pixels);
+            texture.SetPixels32(pixels);
             texture.Apply();
+
             return texture;
         }
 
         private float GetHeightAt(float x, float z)
         {
             var level = NoiseGenerator.GetHeightLevelAt(x, z);
-            var scaleFactor = blockSize * heightScale * level.tile.ScaleFactor;
+            var height = level.HeightValue;
+            
+            // Dug the ocean
+            if (height < 0.01f)
+                height = -0.2f;
 
-            return level.heightValue * scaleFactor;
-        }
+            var scaleFactor = blockSize * heightScale * level.Tile.ScaleFactor;
 
-        private Color GetColor(ZoneType zone, SurfaceType surface)
-        {
-            switch (surface)
-            {
-                case SurfaceType.Sea:
-                    return water;
-                case SurfaceType.Beach:
-                    return zone == ZoneType.Arctic ? winter : beach;
-                case SurfaceType.Ground:
-                    switch (zone)
-                    {
-                        case ZoneType.Arctic:
-                            return winter;
-                        case ZoneType.Desert:
-                            return beach;
-                        case ZoneType.Moderate:
-                            return moderate;
-                        default:
-                            return grass;
-                    }
-                case SurfaceType.MountainHills:
-                    return zone == ZoneType.Arctic ? winter : mountains;
-                case SurfaceType.Mountain:
-                    return winter;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(surface), surface, null);
-            }
+            return height * scaleFactor;
         }
 
         private void FixNeighbourNormals()

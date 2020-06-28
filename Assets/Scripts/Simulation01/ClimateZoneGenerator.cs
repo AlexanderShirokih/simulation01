@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace Simulation01
@@ -10,6 +11,27 @@ namespace Simulation01
     /// </summary>
     public static class ClimateZoneGenerator
     {
+        private static readonly float[] s_ZoneLevels =
+        {
+            0.18f, // Arctic
+            0.35f, // Moderate
+            0.60f, // Tropic
+            1.00f // Desert
+        };
+
+        /// <summary>
+        /// Returns climate zone value at position [x;y].
+        /// </summary>
+        /// <param name="x">x map coordinate in range [0.0;1.0]</param>
+        /// <param name="y">y map coordinate in range [0.0;1.0]</param>
+        /// <returns>zone value, where 0.18f - arctic, 0.35f - moderate, 0.6f - tropic, 1.0f - desert </returns>
+        public static float GetZoneValue(float x, float y)
+        {
+            const float frequency = 2.5f;
+            var cy = y - 0.5f;
+            return (1 - 4 * cy * cy) * Mathf.PerlinNoise(x * frequency, y * frequency);
+        }
+
         /// <summary>
         /// Returns zone type at position [x;y].
         /// </summary>
@@ -18,17 +40,16 @@ namespace Simulation01
         /// <returns> ZoneType chosen by a heat level</returns>
         public static ZoneType GetZoneType(float x, float y)
         {
-            const float frequency = 2.5f;
-            var cy = y - 0.5f;
-            var value = (1 - 4 * cy * cy) * Mathf.PerlinNoise(x * frequency, y * frequency);
+            var value = GetZoneValue(x, y);
 
             // Choose a zone type by a heat level.
-            if (value < 0.18f)
-                return ZoneType.Arctic;
-            if (value < 0.35f)
-                return ZoneType.Moderate;
+            foreach (var zoneType in (ZoneType[]) Enum.GetValues(typeof(ZoneType)))
+            {
+                if (value < s_ZoneLevels[(int) zoneType])
+                    return zoneType;
+            }
 
-            return value < 0.6f ? ZoneType.Tropic : ZoneType.Desert;
+            return ZoneType.Arctic;
         }
 
 

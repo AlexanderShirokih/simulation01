@@ -14,7 +14,7 @@ namespace Test
         private void Start()
         {
             m_Texture = new Texture2D(resolution, resolution, TextureFormat.RGB24, false);
-            GetComponent<MeshRenderer>().material.mainTexture = m_Texture;
+            GetComponent<MeshRenderer>().material.SetTexture("_BaseMap", m_Texture);
             BuildTexture();
         }
 
@@ -58,8 +58,6 @@ namespace Test
 
         public void Pick()
         {
-           
         }
-        
     }
 }
