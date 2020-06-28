@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Simulation01.Terrain;
 using UnityEngine;
 using Random = UnityEngine.Random;
@@ -17,6 +18,12 @@ namespace Simulation01.Weather
         /// Prefab used to instantiate new rain block
         /// </summary>
         public GameObject rainPrefab;
+
+
+        /// <summary>
+        /// Prefab used to instantiate new clouds sorted by size in ascending order. 
+        /// </summary>
+        public GameObject[] cloudsPrefab;
 
         /// <summary>
         /// Height level at which clouds will hover
@@ -37,30 +44,49 @@ namespace Simulation01.Weather
 
         private List<WeatherCellGroup> m_Groups;
 
+        private float m_CloudMovementAngle;
+
+        public float cloudMoveSpeed = 0.2f;
+
         private class DestroyableGameObject
         {
             public int Version;
-            public readonly GameObject Target;
+            public readonly GameObject Particle;
+            public readonly GameObject Cloud;
 
-            public DestroyableGameObject(int version, GameObject target)
+            public DestroyableGameObject(GameObject particle, GameObject cloud, int version = 1)
             {
                 Version = version;
-                Target = target;
+                Particle = particle;
+                Cloud = cloud;
             }
         }
 
-        private Dictionary<WeatherCell, DestroyableGameObject> activeCells;
+        private Dictionary<WeatherCell, DestroyableGameObject> m_ActiveCells;
 
         private void Start()
         {
             var terrainController = GameObject.Find("Terrain").GetComponent<TerrainGenerator>();
             m_MapSize = terrainController.GetMapSize() / 2f;
             m_Groups = new WeatherGroupsCreator(terrainController.NoiseGenerator, divisionsPerSide).CreateCellGroups();
-            activeCells = new Dictionary<WeatherCell, DestroyableGameObject>();
+            m_ActiveCells = new Dictionary<WeatherCell, DestroyableGameObject>();
+
+            // Setup random cloud movement direction 
+            m_CloudMovementAngle = Random.Range(0f, 360f);
 
             // Start weather spawning routine
             StartCoroutine(UpdateNextEvent());
         }
+
+        private void Update()
+        {
+            // Update clouds position
+            foreach (var cloud in m_ActiveCells.Select(container => container.Value.Cloud))
+            {
+                cloud.transform.Translate(0f, 0f, cloudMoveSpeed * Time.deltaTime, Space.Self);
+            }
+        }
+
 
         private bool m_Alive = true;
 
@@ -90,6 +116,12 @@ namespace Simulation01.Weather
                     delay = Random.Range(averageDelay * 0.3f, averageDelay * 0.7f);
 
                 Debug.Log($"Next event in {delay} sec");
+
+                const float maxAngleDeviation = 30f;
+                // Change cloud movement angle
+                m_CloudMovementAngle += Random.Range(-maxAngleDeviation, maxAngleDeviation);
+                m_CloudMovementAngle = Mathf.Repeat(m_CloudMovementAngle, 360f);
+
                 yield return new WaitForSeconds(delay);
             }
         }
@@ -99,25 +131,37 @@ namespace Simulation01.Weather
             foreach (var wCell in cells)
             {
                 var cell = wCell.Cell;
-                if (!activeCells.TryGetValue(cell, out var weatherGameObject))
+                if (!m_ActiveCells.TryGetValue(cell, out var weatherGameObject))
                 {
+                    var power = Mathf.CeilToInt(wCell.Scale * (cloudsPrefab.Length - 1));
+                    var position = new Vector3(
+                        cell.wordCoord.x * (m_MapSize - 2),
+                        cloudHeight,
+                        cell.wordCoord.y * (m_MapSize - 2)
+                    );
+
                     // Instantiate new cell
-                    weatherGameObject = new DestroyableGameObject(1, Instantiate(
+                    var particle = Instantiate(
                         weatherEvent.snowy ? snowPrefab : rainPrefab,
-                        new Vector3(
-                            cell.wordCoord.x * (m_MapSize - 2),
-                            cloudHeight,
-                            cell.wordCoord.y * (m_MapSize - 2)
-                        ),
+                        position,
                         Quaternion.identity,
                         transform
-                    ));
+                    );
+
+                    var cloud = Instantiate(
+                        cloudsPrefab[power],
+                        position,
+                        Quaternion.Euler(0f, m_CloudMovementAngle, 0f),
+                        transform
+                    );
+
+                    weatherGameObject = new DestroyableGameObject(particle, cloud, power);
                 }
                 else
                     weatherGameObject.Version++;
 
-                activeCells[cell] = weatherGameObject;
-                SetupCell(weatherGameObject.Target, wCell, weatherEvent);
+                m_ActiveCells[cell] = weatherGameObject;
+                SetupCell(weatherGameObject.Particle, wCell, weatherEvent);
                 StartCoroutine(DestroyTimer(cell, weatherGameObject, weatherEvent.duration));
             }
         }
@@ -130,8 +174,9 @@ namespace Simulation01.Weather
 
             if (originalVersion != currentVersion) yield break;
 
-            activeCells.Remove(key);
-            Destroy(go.Target);
+            m_ActiveCells.Remove(key);
+            Destroy(go.Particle);
+            Destroy(go.Cloud);
         }
 
         private readonly RangedFloat m_SnowSpeed = new RangedFloat(5f, 30f);

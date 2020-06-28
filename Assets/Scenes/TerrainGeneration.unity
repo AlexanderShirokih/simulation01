@@ -260,10 +260,15 @@ MonoBehaviour:
     type: 3}
   rainPrefab: {fileID: 5513940706006993745, guid: d4aa3b2b7d988fb028b64ab52635316f,
     type: 3}
+  cloudsPrefab:
+  - {fileID: 5632582647687913164, guid: fcc3cd10fb312d63aa84afc1877027b9, type: 3}
+  - {fileID: 7674229322758242696, guid: 71d07ab6e5010c2d59d919fbb16dfb89, type: 3}
+  - {fileID: 5525162529191676676, guid: e7ee8328e2c0e6a7abcfb8ba7fe035a7, type: 3}
+  - {fileID: 1288885914492044226, guid: c7d4516079aaf9fe7bf7c8b287caad94, type: 3}
   cloudHeight: 30
-  maxCloudsCount: 20
   averageDelay: 3
   divisionsPerSide: 16
+  cloudMoveSpeed: 0.2
 --- !u!1 &719199883
 GameObject:
   m_ObjectHideFlags: 0
