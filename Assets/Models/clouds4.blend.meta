@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 91c4f8cc6826b8504953bf606b012298
+guid: 57b07edb714b48c088339111ddaf505b
 ModelImporter:
   serializedVersion: 19301
   internalIDToNameTable: []
@@ -46,8 +46,8 @@ ModelImporter:
     sortHierarchyByName: 1
     importVisibility: 1
     importBlendShapes: 1
-    importCameras: 0
-    importLights: 0
+    importCameras: 1
+    importLights: 1
     fileIdsGeneration: 2
     swapUVChannels: 0
     generateSecondaryUV: 0
@@ -66,7 +66,7 @@ ModelImporter:
     secondaryUVPackMargin: 4
     useFileScale: 1
   tangentSpace:
-    normalSmoothAngle: 60
+    normalSmoothAngle: 0
     normalImportMode: 0
     tangentImportMode: 3
     normalCalculationMode: 4

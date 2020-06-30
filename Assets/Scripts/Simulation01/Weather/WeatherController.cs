@@ -87,7 +87,6 @@ namespace Simulation01.Weather
             }
         }
 
-
         private bool m_Alive = true;
 
         private void OnDestroy()
