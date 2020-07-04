@@ -31,6 +31,8 @@ namespace Simulation01.Weather
         /// </summary>
         public float intensity { get; }
 
+        public bool rainy => intensity >= 0.1f;
+
         public WeatherEvent(ZoneType targetZone, bool snowy, int radius, int duration, float intensity)
         {
             this.targetZone = targetZone;
